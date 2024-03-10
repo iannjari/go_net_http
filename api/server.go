@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -21,12 +22,26 @@ type Server struct {
 }
 
 func NewServer() *Server {
+	fmt.Println("💡 Using Gorilla Mux router...")
 	s := Server{
 		Router:    mux.NewRouter(),
 		languages: []Language{},
 	}
+	fmt.Println(" ")
+	fmt.Println("Configured server using Gorilla Mux")
 
+	fmt.Println("Configuring routes...")
+	fmt.Println(" ")
+	s.routes()
+	fmt.Println("Routes configured.")
+	fmt.Println("✅ Server up, listening on port: 8080")
 	return &s
+}
+
+func (s *Server) routes() {
+	s.HandleFunc("/languages", s.listLanguages()).Methods("GET")
+	s.HandleFunc("/language/{id}", s.deleteLanguage()).Methods("DELETE")
+	s.HandleFunc("/language", s.createLanguage()).Methods("POST")
 }
 
 func (s *Server) createLanguage() http.HandlerFunc {
@@ -63,8 +78,9 @@ func (s *Server) listLanguages() http.HandlerFunc {
 
 func (s *Server) deleteLanguage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		idStr, _ := mux.Vars(r)["id"]
-		id, err := uuid.Parse(idStr)
+		idStr := mux.Vars(r)["id"]
+		fmt.Println(idStr)
+		idU, err := uuid.Parse(idStr)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -72,7 +88,7 @@ func (s *Server) deleteLanguage() http.HandlerFunc {
 		}
 
 		for i, language := range s.languages {
-			if id == language.Id {
+			if idU == language.Id {
 				s.languages = append(s.languages[:i], s.languages[i+1:]...)
 				break
 			}
