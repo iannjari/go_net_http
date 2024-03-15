@@ -1,36 +1,48 @@
 package service
 
 import (
-	"fmt"
 	"go_net_http/model"
+	"go_net_http/repository"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
-type LanguageService struct {
-	db *gorm.DB
+type LanguageService interface {
+	Validate(language *model.Language) error
+	Create(language *model.Language) (*model.Language, error)
+	Fetch(id *uuid.UUID) (error, *model.Language)
+	Delete(id *uuid.UUID) error
+	// TODO: have a query/pagination impl
+	QueryLanguages() error
 }
 
-func NewLanguageService(database *gorm.DB) *LanguageService {
-	return &LanguageService{
-		database,
-	}
+type service struct {
 }
 
-func (s *LanguageService) CreateLanguage(language *model.Language) (model.Language, error) {
+var repo repository.LanguageRepository
 
-	var err error
-	language.Id = uuid.New()
+func NewLanguageService() LanguageService {
+	repo = repository.NewLanguageRepository()
+	return &service{}
+}
 
-	tx := s.db.Begin()
+func (*service) Create(language *model.Language) (*model.Language, error) {
+	return repo.Save(language)
+}
 
-	err = s.db.Create(&language).Error
+func (*service) Validate(language *model.Language) error {
+	return nil
+}
 
-	if err != nil {
-		tx.Rollback()
-		return *language, fmt.Errorf("Could not create entity. Error: %w", err.Error)
-	}
-	tx.Commit()
-	return *language, nil
+func (*service) Fetch(id *uuid.UUID) (error, *model.Language) {
+	return nil, nil
+}
+
+func (*service) Delete(id *uuid.UUID) error {
+	return nil
+}
+
+// TODO: have a query/pagination impl
+func (*service) QueryLanguages() error {
+	return nil
 }

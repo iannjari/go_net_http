@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var Database *gorm.DB
+
 func GetDB() *gorm.DB {
 	cnn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s",
 		"localhost", "5432", "postgres", "ian",
@@ -23,6 +25,7 @@ func GetDB() *gorm.DB {
 		log.Fatal("error occured while acquiring database connection: ", err)
 	}
 	fmt.Println("✅ Successfully configured DB.")
+	Database = db
 	db.AutoMigrate(&model.Language{})
 	return db
 }

@@ -18,12 +18,10 @@ type Server struct {
 	languages []model.Language
 }
 
-var dbClient *gorm.DB
-var languageService *service.LanguageService
+var languageService service.LanguageService
 
 func NewServer(db *gorm.DB) *Server {
-	dbClient = db
-	languageService = service.NewLanguageService(dbClient)
+	languageService = service.NewLanguageService()
 	fmt.Println("💡 Using Gorilla Mux router...")
 	s := Server{
 		Router:    mux.NewRouter(),
@@ -54,7 +52,8 @@ func (s *Server) createLanguage() http.HandlerFunc {
 			return
 		}
 
-		l, serviceErr := languageService.CreateLanguage(&l)
+		lan, serviceErr := languageService.Create(&l)
+		l = *lan
 
 		w.Header().Set("Content-Type", "application/json")
 		if serviceErr != nil {
