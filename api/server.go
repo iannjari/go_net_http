@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"go_net_http/api/model"
-	"go_net_http/api/service"
+	"go_net_http/model"
+	"go_net_http/service"
 	"net/http"
 
 	"github.com/google/uuid"

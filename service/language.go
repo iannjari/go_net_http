@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"go_net_http/api/model"
+	"go_net_http/model"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

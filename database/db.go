@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"go_net_http/api/model"
+	"go_net_http/model"
 	"log"
 
 	"gorm.io/driver/postgres"

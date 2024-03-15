@@ -2,7 +2,7 @@ package main
 
 import (
 	"go_net_http/api"
-	"go_net_http/api/database"
+	"go_net_http/database"
 	"net/http"
 )
 
