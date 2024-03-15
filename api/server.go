@@ -3,29 +3,31 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"go_net_http/api/model"
+	"go_net_http/api/service"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
-
-type Language struct {
-	Id       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	Speakers int       `json:"speakers"`
-}
 
 type Server struct {
 	*mux.Router
 
-	languages []Language
+	languages []model.Language
 }
 
-func NewServer() *Server {
+var dbClient *gorm.DB
+var languageService *service.LanguageService
+
+func NewServer(db *gorm.DB) *Server {
+	dbClient = db
+	languageService = service.NewLanguageService(dbClient)
 	fmt.Println("💡 Using Gorilla Mux router...")
 	s := Server{
 		Router:    mux.NewRouter(),
-		languages: []Language{},
+		languages: []model.Language{},
 	}
 	fmt.Println(" ")
 	fmt.Println("Configured server using Gorilla Mux")
@@ -46,16 +48,19 @@ func (s *Server) routes() {
 
 func (s *Server) createLanguage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var l Language
+		var l model.Language
 		if err := json.NewDecoder(r.Body).Decode(&l); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		l.Id = uuid.New()
-		s.languages = append(s.languages, l)
+		l, serviceErr := languageService.CreateLanguage(&l)
 
 		w.Header().Set("Content-Type", "application/json")
+		if serviceErr != nil {
+			http.Error(w, serviceErr.Error(), http.StatusInternalServerError)
+			return
+		}
 		if err := json.NewEncoder(w).Encode(l); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -80,7 +85,7 @@ func (s *Server) deleteLanguage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idStr := mux.Vars(r)["id"]
 		fmt.Println(idStr)
-		idU, err := uuid.Parse(idStr)
+		id, err := uuid.Parse(idStr)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -88,7 +93,7 @@ func (s *Server) deleteLanguage() http.HandlerFunc {
 		}
 
 		for i, language := range s.languages {
-			if idU == language.Id {
+			if id == language.Id {
 				s.languages = append(s.languages[:i], s.languages[i+1:]...)
 				break
 			}
