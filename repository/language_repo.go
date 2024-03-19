@@ -11,10 +11,10 @@ import (
 
 type LanguageRepository interface {
 	Save(language *model.Language) (*model.Language, error)
-	GetById(id *uuid.UUID) (error, *model.Language)
-	Delete(id *uuid.UUID) error
+	GetById(id *uuid.UUID) (*model.Language, error)
+	Delete(id uuid.UUID) (err error)
 	// TODO: have a query/pagination impl
-	Query() error
+	Query() (*[]model.Language, error)
 }
 
 type repo struct {
@@ -37,21 +37,26 @@ func (*repo) Save(language *model.Language) (*model.Language, error) {
 
 	if err != nil {
 		tx.Rollback()
-		return language, fmt.Errorf("Could not create entity. Error: %w", err.Error)
+		return language, fmt.Errorf("could not create entity. error: " + err.Error())
 	}
 	tx.Commit()
 	return language, nil
 }
 
-func (*repo) GetById(id *uuid.UUID) (error, *model.Language) {
-	return nil, nil
+func (*repo) GetById(id *uuid.UUID) (language *model.Language, error error) {
+	db.First(&language, id.String)
+	return
 }
 
-func (*repo) Delete(id *uuid.UUID) error {
-	return nil
+func (*repo) Delete(id uuid.UUID) (err error) {
+	var lan model.Language
+	lan.Id = id
+	db.Delete(&lan)
+	return
 }
 
 // TODO: have a query/pagination impl
-func (*repo) Query() error {
-	return nil
+func (*repo) Query() (languages *[]model.Language, err error) {
+	db.Find(&languages)
+	return
 }

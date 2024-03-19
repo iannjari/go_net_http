@@ -42,6 +42,7 @@ func (s *Server) routes() {
 	s.HandleFunc("/languages", s.listLanguages()).Methods("GET")
 	s.HandleFunc("/language/{id}", s.deleteLanguage()).Methods("DELETE")
 	s.HandleFunc("/language", s.createLanguage()).Methods("POST")
+	s.HandleFunc("/language/{id}", s.fetchLanguage()).Methods("GET")
 }
 
 func (s *Server) createLanguage() http.HandlerFunc {
@@ -70,9 +71,16 @@ func (s *Server) createLanguage() http.HandlerFunc {
 
 func (s *Server) listLanguages() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var languages []model.Language
+		lan, serviceErr := languageService.QueryLanguages()
+		languages = *lan
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(s.languages); err != nil {
+		if serviceErr != nil {
+			http.Error(w, serviceErr.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := json.NewEncoder(w).Encode(languages); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -86,16 +94,43 @@ func (s *Server) deleteLanguage() http.HandlerFunc {
 		fmt.Println(idStr)
 		id, err := uuid.Parse(idStr)
 
+		serviceErr := languageService.Delete(id)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if serviceErr != nil {
+			http.Error(w, serviceErr.Error(), http.StatusNotFound)
+			return
+		}
+
+	}
+}
+
+func (s *Server) fetchLanguage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := mux.Vars(r)["id"]
+		fmt.Println(idStr)
+		id, err := uuid.Parse(idStr)
+		var l model.Language
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		for i, language := range s.languages {
-			if id == language.Id {
-				s.languages = append(s.languages[:i], s.languages[i+1:]...)
-				break
-			}
+		lan, serviceErr := languageService.Fetch(&id)
+		l = *lan
+
+		w.Header().Set("Content-Type", "application/json")
+		if serviceErr != nil {
+			http.Error(w, serviceErr.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := json.NewEncoder(w).Encode(l); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 	}
